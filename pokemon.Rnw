@@ -1,0 +1,455 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[myheadings]{fullpage}
+
+
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{indentfirst}
+\usepackage{pifont}
+
+\usepackage{subcaption, setspace}
+\usepackage[T1]{fontenc}
+
+\usepackage{fourier}
+\usepackage{float}
+\usepackage{graphicx}
+
+\usepackage[colorlinks=true, allcolors=black]{hyperref}
+
+\usepackage[polish]{babel}
+
+
+\onehalfspacing
+\setcounter{tocdepth}{5}
+\setcounter{secnumdepth}{5}
+
+\usepackage[a4paper,top=2cm,bottom=2cm,left=2cm,right=2cm,marginparwidth=1.5cm]{geometry}
+
+\pagestyle{plain}
+\fancyhf
+
+
+
+\setlength\headheight{15pt}
+\fancyfoot[R]{\thepage}
+ \setlength {\marginparwidth }{2cm}
+\begin{document}
+
+\date{}
+
+\title{	\normalsize{Politechnika Wrocławska\\
+        Wydział Matematyki\\
+        Pakiety Statystyczne}\\[5.0 cm]
+        \rule{\linewidth}{2pt} \\
+		\LARGE \textbf{Analiza zbioru danych o Pokemonach} 
+		\rule{\linewidth}{2pt} \\ [0.5cm]}
+		
+\date{18.12.2022 r.}
+
+\author{
+        Klaudia Marcinkowska 262311 \\
+        Patryk Statkiewicz 262307\\[10.0 cm]
+		}
+		 
+\maketitle
+
+<<warning = FALSE, echo = FALSE>>=
+if(.Platform$OS.type=="windows"){
+  pdf.options(encoding = 'CP1250')
+}
+library(ggplot2)
+library(reshape2)
+library(patchwork)
+@
+
+\newpage
+
+\tableofcontents
+
+\newpage
+\section{Wprowadzenie}
+
+\subsection{Wstęp}
+Jedną z najbardziej rozpoznawalnych produkcji na całym świecie jest seria \textbf{,,Pokemon''}. Znają ją nie tylko dzieci i młodzież, ale również osoby dorosłe. Dziełami japońskiej franczyzy rozwijającej się od 1996 roku są filmy, seriale, gry oraz ogromna ilość zabawek i artykułów użytkowych. Pomysłodawcą marki, a także realizatorem był Satoshi Tajiri. Jego zamiłowania do kolekcjonowania owadów oraz grania na automatach do gier doprowadziły do realizacji pomysłu stworzenia własnej gry, polegającej na łapaniu różnorodnych gatunków stworzeń. W ten sposób narodził się świat Pokemonów. Ale czym właściwie są Pokemony? Pokemony to fikcyjne stworzenia, przypominającymi zwierzęta. Różnią się jednak od nich swoimi magicznymi umiejętnościami, które wykorzystują w codziennym funkcjonowaniu i walkach. Każda tego typu istota czerpie moc z charakterystycznego dla siebie źródła, na przykład z wody, ognia, natury (stąd powstały typy Pokemonów). Ich świat jest oparty na świecie rzeczywistym, a ludzie mogą nawiązywać więzi z Pokemonami i stawać się ich kompanami oraz trenerami. 
+
+\subsection{Opis danych}
+ Do analizy wybraliśmy zbiór danych \textbf{,,Pokemon with stats``} ze strony Kaggle znajdujący się pod linkiem \url{https://www.kaggle.com/datasets/abcsds/pokemon}. Dane, które zostały opisane przez Mylesa O'Neilla, zawierają \textbf{721 Pokemonów}, w tym ich numer w Pokedexie (jest to zbiór wszystkich Pokemonów, gdzie każdy z nich ma unikalny indeks), nazwę, pierwszy i drugi typ, generację, czy jest on legendarny oraz podstawowe statystyki: HP, atak, obrona, specjalny atak, specjalna obrona i szybkość. Dane do tego zestawu zostały pozyskane ze stron: \url{https://www.pokemon.com}, \url{https://pokemondb.net} oraz \url{https://bulbapedia.bulbagarden.net}.
+
+\subsection{Opis zmiennych}
+ Zbiór danych zawiera 13 kolumn zmiennych dzielących się na:
+ \begin{itemize}
+     \item[\ding{228}] \textbf{Zmienne ciągłe}:
+     \begin{itemize}
+         \item[\textbullet] \textbf{\#} - numer indeksu PokeDex identyfikujący każdego Pokemona, najmniejszy indeks to 1, a największy to 721, ponieważ tyle mamy różnych Pokemonów w tabeli.
+         \item[\textbullet] \textbf{Total} - suma wszystkich statystyk (HP, atak, obrona, specjalny atak, specjalna obrona i szybkość). Poszczególne statystyki nie mają górnych granic, więc w teorii nie ma maksimum, ale maksymalna suma statystyk w badanym zbiorze danych wynosi 780 dla dwóch Mega wersji Pokemonów: Mewtwo i Rayquaza. Z reguły Pokemony o największych sumach statystyk są najsilniejsze.
+         \item[\textbullet] \textbf{HP - hit points/health points} - punkty życia określają, ile obrażeń pokemon może wytrzymać przed omdleniem. Maksymalna wartość w tabeli to 255 dla Pokemona Blissey.
+        \item[\textbullet] \textbf{Attack} - atak (np. Drapanie, Cios), podstawa do wyliczania obrażeń, jaką Pokemon zadaje swojemu przeciwnikowi. Maksimum spośród Pokemonów w tabeli to 190 dla Mega wersji pokemona Mewtwo.
+        \item[\textbullet] \textbf{Defense} - obrona, podstawowa odporność na obrażenia przeciwko normalnym atakom. Maksymalna wartość w zbiorze to 230 dla trzech różnych Pokemonów.
+        \item[\textbullet] \textbf{SP Atk} - atak specjalny, wyznacza jak silny jest specjalny atak Pokemona (np. Podmuch Ognia). Najmniejsza wartość ataku specjalnego to 10, a największa to 190.
+        \item[\textbullet] \textbf{SP Def} - odporność na obrażenia przeciwko atakom specjalnym. Wartości tej zmiennej wahają się pomiędzy 20, a 230.
+        \item[\textbullet] \textbf{Speed} - szybkość określająca, który Pokemon atakuje jako pierwszy w każdej rundzie walki. Minimalną szybkością w tabeli jest 5, a maksymalną 180.
+     \end{itemize}
+     \item[\ding{228}] \textbf{Zmienne kategoryczne}:
+     \begin{itemize}
+         \item[\textbullet] \textbf{Name} - nazwa każdego Pokemona. Nie ma dwóch Pokemonów o takiej samej nazwie, więc są one uniwersalne. Nazw jest więcej niż 721 (800 różnych wartości), ponieważ niektóre Pokemony posiadają swoje Mega wersje. Ich indeks w PokeDexie jest taki sam jak standardowego odpowiednika, ale nazwa zawiera przedrostek Mega.
+         \item[\textbullet] \textbf{Type 1} - podstawowy typ Pokemona. Każdy Pokemon ma swój typ, który określa słabość/odporność na ataki. W tabeli znajduje się 18 różnych typów np. Grass - Pokemon trawiasty.
+         \item[\textbullet] \textbf{Type 2} - dodatkowy typ Pokemona. Nie każdy Pokemon ma podwójny typ, w przypadku braku drugiego typu w zbiorze pojawia się brak danych. Podobnie jak w przypadku pierwszego, w tabeli dla drugiego typu pojawia się 18 różnych kategorii np. Flying - Latający.
+         \item[\textbullet] \textbf{Legendary} - zmienna przyjmująca wartości Prawda/Fałsz, mówiąca o tym, czy Pokemon jest legendarny czy nie. Legendarne Pokemony to grupa uważana za bardzo rzadką i potężną. Nie można ich uzyskać poprzez łapanie ich na wolności ani wylęganie się z jaj.
+         \item[\textbullet] \textbf{Generation} - numer regionu, w którym dany Pokemon dołączył do listy PokeDex. W każdym pokoleniu wprowadzany jest nowy region i zestaw Pokemonów, które nie istniały w poprzedniej generacji. W zbiorze pojawia się 6 generacji (liczby całkowite od 1 do 6), ale aktualnie jest już 9 generacji (dane zostały zebrane przed wydaniem kolejnych generacji).
+         \end{itemize}
+     \end{itemize}
+
+\subsection{Cel analizy oraz pytanie badawcze}
+Duża część fabuły gier i filmów polega na pojedynkach pomiędzy trenerami Pokemonów. Każdy trener może wystawić do walki maksymalnie 6 Pokemonów. Celem naszej analizy jest \textbf{znalezienie 6 najbardziej różnorodnych Pokemonów, których wszystkie statystyki są zrównoważone i jak najwyższe}. Aby uzyskać możliwie najbardziej wyważony zespół, weźmiemy pod uwagę również typy Pokemonów, w taki sposób, żeby w wybranej szóstce nie było dwóch takich samym typów. To pozwali nam na najbardziej efektywną obronę oraz atak, ponieważ każdy typ ma jakieś słabości np. słabością ognia jest woda, słabością wody jest trawa, a z kolei słabością trawy jest ogień. Na przykładzie możemy stwierdzić, że Ognisty Pokemon zostanie najszybciej pokonany Wodnistym Pokemonem, dlatego w naszej grupie muszą pojawić się Pokemony o różnym typie, aby prawdopodobieństwo wygrania walki było najwyższe. Zatem pytanie badawcze to: \textbf{Jakie Pokemony stworzą najsilniejszy i najbardziej wytrzymały zespół?}
+
+<<echo = FALSE>>=
+pokemon <- read.csv("Pokemon.csv")
+
+index <- c(1:length(pokemon$Index))
+@
+
+\section{Przygotowanie danych do analizy}
+
+\subsection{Braki danych}
+Aby jak najlepiej wyrazić naturę Pokemona, niektóre z nich posiadają dwa typy, np. Pokemon o nazwie Torterra to duży żółw stepowy, która ma drzewo na swoim pancerzu, a jego typy to Trawiasty i Ziemny.
+
+<<echo = FALSE>>=
+inde <- c()
+l <- 0
+for(i in 1:length(pokemon[,'Type2'])){
+  if(pokemon[i, 'Type2'] == ''){
+    inde[l] <- i
+    l <- l + 1
+  }
+}
+pokemon[inde[1:10],1:9]
+@
+
+W kolumnie \textbf{Type 2} pojawia się 386 braków danych, ponieważ te Pokemony posiadają tylko jeden typ. W powyższej tabeli możemy zobaczyć przykłady Pokemonów o tylko jednym typie i braku danych w kolumnie odnoszącej się do typu drugiego. Nie będziemy usuwać tych wierszy, ponieważ brak drugiego typu nie wpływa bezpośrednio na wysokości statystyk oraz efektywność w walce.
+
+\subsection{Szczególne przypadki Pokemonów}
+Jedną z wyróżniających się grup Pokemonów są Pokemony Legendarne. Legendarne Pokemony to bardzo potężne i niezwykle rzadkie stworzenia. Charakteryzuje ich obecność w historii, są często wymieniane w legendach. Zwykle w grze istnieje tylko jeden Legendarny Pokemon z jego gatunku i można go napotkać, wchodząc z nim w interakcję poza bitwą lub w inny specjalny sposób. 
+
+<<echo = FALSE>>=
+ggplot(pokemon, aes(x = index, y = Total, color = Legendary)) +
+  geom_point() + 
+  labs(title = 'Suma statystyk Pokemonów',
+       x = 'Indeks Pokemona w Pokedexie',
+       y = 'Suma statystyk',
+       caption = 'Wykres ukazujący sumę statystyk Pokemona w zależności od jego indeksu.') + 
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.caption = element_text(hjust = 0.5)
+       )
+@
+
+Z wykresu możemy odczytać, że najwyższą sumę statystyk posiadają Pokemony Legendarne, których jest 65 w badanych danych. Moglibyśmy zatem wybrać z tej grupy szóstkę stworzeń do walki i posiadać bardzo silną drużynę. Niestety żaden z trenerów Pokemonów nie może złapać Legendarnego stworzenia do Pokeballa (są zbyt potężne), więc nie możemy użyć ich w walce. Dlatego potraktujemy je jako przypadki odstające i usuniemy ze zbioru danych wszystkie Pokemony, które w ostatniej kolumnie \textbf{Legendary} mają wartość True.
+
+W opisach zmiennych wspomnieliśmy, że w kolumnie \textbf{Name} jest więcej niż 721 nazw, ponieważ niektóre Pokemony mają swoje \textbf{Mega wersje}, ale ich indeks jest nadal taki sam jak dla wersji podstawowej. Przedrostek Mega pojawia się w wyniku ewolucji,w której pokemony nie przybierają nowej formy, a jedynie wzmacniają swoją dotychczasową. Zazwyczaj podczas Mega Ewolucji statystyki bazowe zwiększają się o 100 punktów. W walkach wśród sześciu Pokemonów tylko jeden może być Mega wersją, więc te przypadki również odrzucimy ze zbioru danych, ponieważ istnieje duże prawdopodobieństwo, że dzięki wysokim parametrom większość wybranych podczas analizy Pokemonów do drużyny byłaby po Mega Ewolucji, co jest niemożliwą sytuacją w uniwersum Pokemonów.
+
+<<echo = FALSE>>=
+l <- 0
+
+for(i in index){
+  if(pokemon$Legendary[i] == 'False'){
+    l <- l + 1
+  }
+  
+}
+
+non_legendary_pokemon <- pokemon[order(pokemon$Legendary, decreasing = FALSE),]
+non_legendary_pokemon <- non_legendary_pokemon[1:l,]
+non_legendary_pokemon <- non_legendary_pokemon[order(
+  non_legendary_pokemon$Total, decreasing = TRUE),]
+non_legendary_pokemon[1:10,1:8]
+@
+
+Możemy zauważyć, że wśród badanych Pokemonów pojawiają się ich Mega wersje z wysokimi statystykami. Usuwamy z zestawu danych wszystkie Pokemony, które w kolumnie \textbf{Name} mają w nazwie przedrostek ,,Mega''. Wśród takich Pokemonów pojawi się również Meganium (wiersz poniżej), który ma w nazwie szukany przedrostek, ale nie jest to Mega wersja, więc pozostawiamy go w danych.
+
+<<echo = FALSE>>=
+p <- c()
+l1 <- 1
+for(i in 1:l){
+  pom <- grep('Mega', non_legendary_pokemon[i,2])
+  if(identical(pom, 1L) == TRUE){
+    if(non_legendary_pokemon[i,2] != "Meganium"){
+      p[l1] <- i
+      l1 <- l1 + 1
+    }
+  }
+}
+
+non_mega_pokemon <- non_legendary_pokemon[-p,]
+
+inde <- 0
+for(i in 1:length(pokemon[,'Name'])){
+  if(pokemon[i,'Name'] == 'Meganium'){
+    inde <- i
+  }
+}
+pokemon[inde,1:11]
+@
+
+\subsection{Nadanie etykiet danym}
+Kolumny zmiennych mają intuicyjne nazwy, więc nie będziemy ich całkowicie zmieniać, jednak aby podczas analizy nie pojawiały się błędy związane z nieprawidłowymi nazwami usunęliśmy z nich spacje oraz znaki specjalne. Pierwsza kolumna \textbf{\#} została zmieniona na \textbf{Index}. W przypadku kolumn posiadających spacje w nazwie np. \textbf{Type 1} usunęliśmy ją i powstała nazwa \textbf{Type1}.
+
+\section{Analiza danych}
+
+\subsection{Pokemony Mityczne}
+Po wyłączeniu Pokemonów Legendarnych oraz Mega wersji posiadamy ostateczny zestaw danych do analizy (693 wiersze), w ramach której zostanie znaleziona najlepsza drużyna sześciu Pokemonów. Dobrym sposobem jest klasyfikacja Pokemonów od najsłabszych do najsilniejszych na podstawie sumy statystyk bazowych. Posortowaliśmy dane malejąco według łącznej sumy statystyk (kolumna Total). 
+
+<<echo = FALSE>>=
+non_mega_pokemon[1:10,1:10]
+@
+
+Jako osoby interesujące się Pokemonami możemy zauważyć, że w tabeli na wysokich pozycjach pojawiają się nadal nietypowe Pokemony, których nie można umieścić w drużynie trenera. Ta szczególna grupa nazywana jest Pokemonami Mitycznymi. \textbf{Pokemony Mityczne} występują jeszcze rzadziej niż Pokemony Legendarne, ich postacie pojawiają się w mitach i zwykli trenerzy nie mogą w żaden sposób spotkać ich w grze. Ze względu na brak kolumny z informacją o tym, czy Pokemon jest mityczny należy wykluczyć je ręcznie. Skorzystaliśmy z encyklopedii Pokemon (\url{https://bulbapedia.bulbagarden.net/wiki/Mythical_Pok\%C3\%A9mon}), gdzie zostały wymienione wszystkie ich nazwy. Utworzyliśmy wektor wszystkich Pokemonów Mitycznych i jeżeli jakakolwiek z nazw w wektorze pojawiała się również w kolumnie \textbf{Name} to odrzucaliśmy taki wiersz. W ten sposób zmniejszyliśmy zestaw danych do 684 wierszy.
+
+<<echo =  FALSE>>=
+mythical = c('Mew', 'Celebi', 'Manaphy', 'Phione',  'KeldeoOrdinary Forme',
+            'KeldeoResolute Forme', 'MeloettaAria Forme', 
+            'MeloettaPirouette Forme', 'Genesect')
+
+p <- c()
+l2 <- 1
+for(i in 1:length(non_mega_pokemon$Total)){
+  for(j in 1:length(mythical)){
+    if(non_mega_pokemon[i,2] == mythical[j]){
+      p[l2] <- i
+      l2 <- l2 + 1
+    }
+  }
+}
+
+optimal_pokemon <- non_mega_pokemon[-p,]
+optimal_pokemon[1:10,1:10]
+@
+
+Przedstawiona wyżej tabela zawiera 10 Pokemonów z najwyższą sumą statystyk. Pokemony występujące w pierwszych wierszach tabeli faktycznie mają dobre statystyki, ale przeprowadzimy dalszą analizę, tak aby wybrany zespół był jak najbardziej zbalansowany i nie było dysproporcji pomiędzy parametrami, ponieważ w takiej sytuacji zmniejsza się prawdopodobieństwo wygranej w walce. Przykładem takiego Pokemona jest Shuckle (wiersz poniżej), który ma wysoką odporność na obrażenia, ale jednocześnie bardzo niską moc ataku i w przypadku silniejszego Pokemona w bitwie nie będzie w stanie go pokonać.
+
+<<echo = FALSE>>=
+inde <- 0
+for(i in 1:length(pokemon[,'Name'])){
+  if(pokemon[i,'Name'] == 'Shuckle'){
+    inde <- i
+  }
+}
+pokemon[inde,1:9]
+@
+
+\subsection{Korelacja pomiędzy statystykami}
+Kolejnym ważnym aspektem, który warto przeanalizować jest korelacja pomiędzy wszystkimi statystykami, aby dowiedzieć się, które z nich mają na siebie największy wpływ. W tym celu utworzyliśmy macierz korelacji, na której zostały przedstawione liczbowe wartości oraz wykresy zależności pomiędzy wszystkimi parametrami. 
+
+<<echo = FALSE>>=
+statistics <- c('HP', 'Attack', 'Defense', 'Sp.Atk', 'Sp.Def', 'Speed')
+
+corr <- matrix(nrow = length(statistics), ncol = length(statistics),
+               dimnames = list(statistics, statistics))
+for(i in 1:length(statistics)){
+  for(j in 1:length(statistics)){
+    corr[i, j] <- cor(optimal_pokemon[statistics[i]],
+             optimal_pokemon[statistics[j]])
+  }
+}
+
+melted_corr <- melt(corr)
+ggplot(data = melted_corr, aes(x = Var1, y = Var2, fill = value)) + 
+  geom_tile() +
+  geom_text(aes(x = Var2, y = Var1, label = round(value, 2)),
+            color = "black", size = 4) +
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+                       midpoint = 0, limit = c(min(corr),max(corr)),
+                       space = "Lab", name = "Korelacja\nPearsona") +
+  labs(title = 'Macierz korelacji',
+       x = 'Statystyki',
+       y = 'Statystyki',
+       caption = 'Macierz korelacji dla statystyk wchodzącyh w skład kolumny Total.') + 
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.caption = element_text(hjust = 0.5)
+       )
+@
+
+<<echo = FALSE>>==
+rys2 <- function(Data, table, i, j){
+  I <- Data[table[i]]
+  I <- unlist(I)
+  qi <- quantile(I, probs = c(0.75))
+  J <- Data[table[j]]
+  J <- unlist(J)
+  qj <- quantile(J, probs = c(0.75))
+  return(ggplot(data = Data,
+                aes(x = eval(as.name(table[i])),
+                    y = eval(as.name(table[j])))) + 
+           geom_point(colour = 'darksalmon',
+                      fill = 'darksalmon',
+                      size = 0.5) +
+           geom_hline(yintercept = qi, color = "black") + 
+           geom_vline(xintercept = qj, color = "black") +
+           labs(x = table[i],
+                y = table[j]))
+}
+
+ll <- 1
+for(i in 1:length(statistics)){
+  for(j in 1:length(statistics)){
+    ry <- rys2(optimal_pokemon, statistics, i, j)
+    pom <- paste("q", ll, sep = "")
+    assign(pom, ry)
+    ll <- ll + 1
+  }
+}
+
+q1 + q2 + q3 + q4 + q5 + q6 + q7 + q8 + q9 + q10 + q11 + q12 + q13 + q14 +
+  q15 + q16 + q17 + q18 + q19 + q20 + q21 + q22 + q23 + q24 + q25 + q26 +
+  q27 + q28 + q29 + q30 + q31 + q32 + q33 + q34 + q35 + q36 + 
+  plot_layout(ncol = 6, nrow = 6)
+@
+Na podstawie wykresów możemy wyciągnąć następujące wnioski:
+\begin{itemize} 
+\item Warto zwrócić uwagę, że jedyną ujemną korelację pomiędzy statystykami Pokemonów mają tylko kolumny Speed i Defense, jest to wartość bliska -0.1. Ta wartość nie odpowiada silnej ujemnej korelacji, ale można wyciągnąć wniosek z tej zależności - Pokemony z wysoką statystyką Defense są wolniejsze, czyli często będą wykonywać swój atak jako drugie, ale za to są również bardziej wytrzymałe, dzięki wysokiej statystyce obrony. Pokemony z wysoką statystyką Speed są często słabe oraz mają niską odporność na ataki innych Pokemonów. 
+
+\item Najsilniejsza korelacja pomiędzy kolumnami występuję dla Defense i Special Defense, co oznacza, że Pokemony z wysoką statystyką podstawowej obrony najczęściej mają także wysoką statystykę obrony przed atakami specjalnymi. To sprawia, że są jeszcze bardziej defensywnie usposobione. 
+
+ \item Zmienne bardzo zbliżone do siebie, o wysokiej korelacji to wartości specjalnego ataku i specjalnej defensywy (przy zaznaczeniu, że specjalny atak i sama statystyka defensywy nie mają wysokiej korelacji). To prowadzi do wniosków, że jeżeli Pokemon dobrze odpiera ataki specjalne to najczęściej również potrafi zadać je bardzo silne. 
+ 
+ \item Zaskakującą wartością jest korelacja zmiennych HP i Defense, ponieważ najczęściej nie są one mocno skorelowane. Oznacza to, że wysoka statystyka defensywna nie jest równoważna dużej liczbie punktów zdrowia, co często jest błędnie zakładane przez trenerów. Jest to spowodowane tym, że wysoka wartość parametru Defence zmniejsza przyjmowane obrażeń przez Pokemona, stąd aby pojedynek był bardziej wyrównany te kolumny nie mają wysokich wartości jednocześnie. Jednakże korelacja pojawia się dla kolumn HP i Attack, zatem istnieje dużo większe prawdopodobieństwo, że Pokemon z wieloma punktami HP będzie miał również lepszy atak niż obronę.
+ 
+\item Dodatkowo, możemy zauważyć ciekawą zależność na wykresie statystyk Attack i Sp. Attack. Zobrazowane dane można podzielić na trzy kategorie. Jesteśmy w stanie dostrzec zagęszczony zarys funkcji liniowej na tym wykresie, co oznacza, że u sporej części Pokemonów te statystyki rozwijają się w podobnym zakresie. Druga kategoria to dane, które są nad wyznaczoną prostą, czyli obserwacje, leżące ponad dostrzeżoną funkcją liniową, a trzecia kategoria to obserwacje poniżej prostej - wysokie statystyki zmiennej niezależnej. Na tym wykresie taka zależność jest przedstawiona w bardzo klarowny sposób, aczkolwiek w innych wykresach również jesteśmy w stanie dostrzec wartości, które faktycznie od siebie zależą oraz te odstające należące do drugiej lub trzeciej kategorii.
+\end{itemize}
+
+Naszym celem będzie znalezienie takich wartości statystyk, aby wszystkie były jednakowo wysokie, dzięki czemu będziemy mogli wyciągnąć maksimum z zespołu sześciu Pokemonów, które wybierzemy. Dlatego na początek, spróbujemy wykluczyć Pokemony, które mają niskie wartości wszystkich statystyk, wybierając tylko takie, których statystyki są wyższe niż określona wartość. Biorąc pod uwagę, że próbujemy znaleźć najbardziej zbalansowany skład, chcemy, aby dla danego Pokemona wszystkie rodzaje statystyk były na równie wysokim poziomie. Jako pierwsze ograniczenie spróbujemy użyć trzeciego kwartyla dla danych parametrów.
+
+Spróbujemy znaleźć takie Pokemony, których równocześnie statystyka ataku jest większa od 75\% pozostałych wartości tej statystyki dla innych Pokemonów, statystyka defensywy jest większa od 75\% innych wartości defensywy innych Pokemonów i analogicznie dla każdego parametru wchodzącego w sumę kolumny Total. Koniunkcja tych warunków zapewni nam, że odrzucimy przypadki, w którym jedna ze statystyk znacząco różni się od pozostałych np. opisywany już Pokemon Shuckle, którego parametr defensywy jest kilkunastokrotnie razy większy od innych statystyk. Po zastosowaniu konkretnego filtra, dostaliśmy wyniki:
+
+<<echo = FALSE>>==
+statistic <- c('Total', statistics)
+find <- function(Data, table, q){
+   best_pokemon <- c()
+   ll <- 1
+   for(i in 1:length(Data[,1])){
+     lll <- 0
+     for(j in 1:length(table)){
+       J <- Data[table[j]]
+       J <- unlist(J)
+       qj <- quantile(J, probs = c(q))
+       if(optimal_pokemon[i, j + 4] > qj){
+         lll <- lll + 1
+       }
+     }
+     if(lll == length(table)){
+       best_pokemon[ll] <- i
+       ll <- ll + 1
+     }
+   }
+   return(best_pokemon)
+}
+best_pokemon <- find(optimal_pokemon, statistic, 0.75)
+#490 76.25  90  85  85  80  81.25
+team <- optimal_pokemon[best_pokemon,]
+team[,1:11]
+@
+
+Rezultatem takich warunków jest jeden Pokemon - Hydreigon. Jest to jedyne stworzenie, który spełnia wszystkie wymagane kryteria. Każdy trener do walki powinien wystawić maksymalnie 6 Pokemonów, a obecnie wybrany został tylko jeden. Przyjęte założenia są zbyt mocne, aby w zestawie danych zwrócona została wymagana liczba Pokemonów. W celu zwiększenia ilości pozycji w zbiorze danych spróbujemy manipulować wartością wybieranego kwantyla. Na poniższym wykresie przeanalizujemy wartości kwantyli w zakresie $(0.50, 0.75)$, które zastosujemy do tych samych warunków koniunkcji.
+
+<<echo = FALSE>>==
+numbers <- c()
+
+for(i in 50:75){
+  best_pokemon <- find(optimal_pokemon, statistic, i/100)
+  if(length(best_pokemon) == 6){
+    q <- i/100
+  }
+  numbers[i-49] <- length(best_pokemon)
+}
+
+quantiles <- seq(0.5,0.75,0.01)
+ggplot() +
+  geom_point(aes(x = quantiles, y = numbers),
+             colour = 'darksalmon',
+             fill = 'darksalmon') +
+  geom_hline(yintercept = 6, color = "red") +
+  labs(title = 'Liczba pokemonów ponad kwantylem',
+       x = 'Kwantyle',
+       y = 'Ilość',
+       caption = 'Ilość pokemonów ze statystykami ponad kwantylami.') + 
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.caption = element_text(hjust = 0.5)
+       )
+@
+
+Na powyższym wykresie przedstawiona została liczba zwróconych Pokemonów po zastosowaniu konkretnej wartości kwantyla. Czerwoną linią została oznaczona poszukiwana liczba zwróconych Pokemonów z zestawu danych, czyli 6. Jeden wpis z analizowanego zbioru jest zwracany dla dowolnych kwantyli większych od $0,70$. Sześć Pokemonów otrzymujemy wtedy i tylko wtedy, gdy kwantyl wynosi $0,69$. Jest to idealnie wyznaczony próg, który potencjalnie zwróci nam końcowy skład zespołu. Wybrane 6 Pokemonów dla nowo zaproponowanego kwantyla wyglądają następująco:
+
+<<echo = FALSE>>==
+for(i in 75:69){
+  best_pokemon <- find(optimal_pokemon, statistic, i/100)
+}
+team <- optimal_pokemon[best_pokemon,]
+team[,1:11]
+@
+
+Wynikiem takiego działania jest 6 najbardziej zbalansowanych Pokemonów. Ich wszystkie statystyki są idealnie wysokie, aby nie miały wielu słabości i jak najdłużej wytrzymały w walce. Jednakże, jeżeli przeanalizujemy typy otrzymanych stworzeń, możemy zobaczyć, że u 5 z 6 wybranych Pokemonów mają one ten sam typ smoczy (Dragon) jako podstawowy lub dodatkowy rodzaj. Taki wybór Pokemonów sprawiłby, że trener zostałby szybko skojarzony z byciem specjalistą w typie smoczym i każdy przeciwnik miałby możliwość przygotować taki zespół, aby w łatwy sposób skontrować taką szóstkę podobnych typem Pokemonów. Po dotarciu do przodujących Pokemonów i otrzymaniu najlepszych pod względem statystyk, chcielibyśmy uwzględnić jeszcze ich użyteczność i różnorodność, aby wybrany zespół Pokemonów był w stanie przeciwstawić się jak największej liczbie ich słabości. Dlatego w zespole powinny znaleźć się Pokemony o różnym typie.
+
+
+Ostatecznie, aby wybrać końcowy zespół będziemy uwzględniać typy Pokemonów w taki sposób, aby w otrzymanym zbiorze danych nie pojawiły się dwa Pokemony o wspólnych typie podstawowym (Typ 1) lub dodatkowym (Typ 2). Selekcjonowanie Pokemonów rozpoczniemy od wybrania tych, które zostały zwrócone dla jak największego kwantyla i będziemy rozszerzać ten zbiór - zmniejszając kwantyl oraz biorąc pod uwagę pojawiające się już typy.
+
+\subsection{Wybrany zespół}
+Nasz ostateczny skład składa się z następujących Pokemonów: ...
+<<echo = FALSE>>==
+tab <- c()
+for(i in 75:60){
+  best_pokemon <- find(optimal_pokemon, statistic, i/100)
+  tab <- c(tab, best_pokemon)
+  tab <- unique(tab)
+}
+team <- optimal_pokemon[tab,]
+
+types <- c(team[1, 'Type1'], team[1, 'Type2'])
+ind <- c(tab[1])
+
+for(i in 2:length(tab)){
+  d <- 0
+  for(j in 1:length(types)){
+    if(team[i, 'Type2'] == ""){
+      if(team[i, 'Type1'] == types[j]){
+        d <- 1
+        break
+      }
+    }
+    else{
+      if(team[i, 'Type1'] == types[j]){
+        d <- 1
+        break
+      }
+      if(team[i, 'Type2'] == types[j]){
+        d <- 1
+        break
+      }
+    }
+  }
+  if(d == 0){
+    types <- append(types, team[i, 'Type1'])
+    types <- append(types, team[i, 'Type2'])
+    ind <- append(ind, tab[i])
+  }
+}
+team <- optimal_pokemon[ind,]
+
+for(j in 1:length(statistic)){
+  J <- optimal_pokemon[statistic[j]]
+  J <- unlist(J)
+  qj <- quantile(J, probs = c(0.6))
+}
+#455  70  80  70  70  70  68 kwantyl 0.6
+team <- team[1:6,]
+team[,1:11]
+@
+
+Po zastosowaniu wszystkich kryteriów otrzymaliśmy najbardziej zbalansowany pod względem statystyk i zróżnicowany patrząc na otrzymane typy w zespole, które powinny być optymalnym wyborem w pojedynkach z innymi trenerami.
+
+
+\section{Podsumowanie}
+Przechodząc przez analizowany zbiór danych, byliśmy w stanie znaleźć Pokemony, które nie mogą zostać wybrane do walki ze względu na ich przynależność do grupy legendarnych lub mitycznych Pokemonów. Ponadto, bazując na wiedzy z gier i filmów o Pokemonach wykluczyliśmy Mega wersje Pokemonów, ponieważ jesteśmy świadomi ich małego zastosowania w walkach. W ostatecznie wyznaczonej grupie stworzeń znaleźliśmy takie Pokemony, które idealnie spełniają cel naszej analizy. Rezultatem naszych zmagań jest sześć Pokemonów, których możemy użyć do pojedynków pomiędzy trenerami. Wykorzystując naszą analizę zwiększamy prawdopodobieństwo zwycięstwa w potyczce dwóch trenerów. Pomysł z wykorzystaniem kwantyli do wyznaczenia najbardziej zrównoważonych i zróżnicowanych Pokemonów odniósł sukces, jednakże wymagał on pewnych usprawnień - najpierw analizy ile wpisów danych zwracają określone kwantyle, następnie wybraliśmy unikalne typy Pokemonów, aby zmniejszyć liczbę słabości całego zespołu. Po zmianie naszych założeń do selekcjonowania Pokemonów, aby były mniej rygorystyczne udało otrzymać się finalny zespół najefektywniejszych Pokemonów. 
+
+Sposób wybierania Pokemonów ma potencjał na wiele różnych usprawnień. Przede wszystkim, na podstawie badań lub innego gotowego zestawu danych jakie Pokemony są najczęściej wybierane przez trenerów do walk byłoby możliwe symulacyjne sprawdzenie, czy wybrany przez nas zespół jest lepszy od Pokemonów przeciwnika. Bazując na powtarzających się symulacjach walk, bylibyśmy w stanie znaleźć Pokemony, które mają największy wskaźnik porażek i wykluczyć je z proponowanego zespołu. Ponadto, uwzględniając typy Pokemonów, które najczęściej są wybierane przez trenerów, bylibyśmy w stanie wybrać do naszego zespołu takie Pokemony, które miałyby jak najmniej słabości przeciwko najczęściej występującym drużynom. W oparciu o te informacje oraz wiedzę dotyczącą słabości konkretnych typów Pokemonów możliwe jest zaproponowanie kolejnej drużyny sześciu Pokemonów i odniesieniu większej ilości sukcesów w walkach.
+
+
+\end{document}
