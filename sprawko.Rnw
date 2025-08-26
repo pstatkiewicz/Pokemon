@@ -1,0 +1,464 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[myheadings]{fullpage}
+
+
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{indentfirst}
+\usepackage{pifont}
+
+\usepackage{subcaption, setspace}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{fourier}
+
+\usepackage[colorlinks=true, allcolors=black]{hyperref}
+
+\usepackage[polish]{babel}
+
+
+\onehalfspacing
+\setcounter{tocdepth}{5}
+\setcounter{secnumdepth}{5}
+
+\usepackage[a4paper,top=2cm,bottom=2cm,left=2cm,right=2cm,marginparwidth=1.5cm]{geometry}
+\pagestyle{plain}
+
+\setlength\headheight{15pt}
+\fancyfoot[R]{\thepage}
+ \setlength {\marginparwidth }{2cm}
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+\date{}
+
+\title{	\normalsize{Politechnika Wrocławska\\
+        Wydział Matematyki\\
+        Komputerowa Analiza Szeregów Czasowych}\\[5.0 cm]
+        \rule{\linewidth}{2pt} \\
+		\LARGE \textbf{Analiza zbioru danych rzeczywistych} 
+		\rule{\linewidth}{2pt} \\ [0.5cm]}
+		
+\date{22.12.2022 r.}
+
+\author{
+        Patryk Statkiewicz 262307\\[12.0 cm]
+		}
+		 
+\maketitle
+<<echo = FALSE, warning = FALSE>>=
+if (.Platform$OS.type=="windows") {
+  pdf.options(encoding = 'CP1250')
+library("ggplot2")
+@
+\newpage
+
+\tableofcontents
+
+\newpage
+\section{Wprowadzenie}
+
+\subsection{Wstęp}
+Każdy wie, że konie mechaniczne są bardzo ważnym czynnikiem w wyborze auta. Dla niektóych fanów szybkiej jazdy jest to nawet najważniejszy parametr w pojeździe. Najczęściej najwięcej koni mechanicznych mają auta sportowe, które są zazwyczaj droższe niż zwykłe auta osobowe. Rodzi się więc pytanie jak moc silnika ma się do innych parametrów auta, a co najważniejsze ceny.
+
+<<echo = FALSE>>==
+file <- read.csv("CarPrice_Assignment.csv", header = TRUE)
+file <- file[order(file$horsepower, decreasing = FALSE),]
+Y <- file$price
+X <- file$horsepower
+n <- length(X)
+index = c()
+for(i in 1:length(X)){
+    index[i] <- i
+}
+@
+
+\subsection{Opis danych}
+ Do analizy został wybrany zbiór danych \textbf{"Car Price Prediction ( Linear Regression )"} ze strony Kaggle \url{https://www.kaggle.com/code/ashydv/car-price-prediction-linear-regression/data/}. Dane zawierają 205 wierszy oraz 26 kolumn. Do naszej analizy będą potrzebne dwie kolumny odpowiadające za cenę auta oraz za moc silnika.
+
+\subsection{Opis zmiennych}
+ Zbiór danych do analizy:
+ \begin{itemize}
+    \item [\textbullet] \textbf{horsepower} (zmienna objaśniająca) - ilość koni mechanicznych w silniku danego auta wyrażona w \textit{KM} (konie mechaniczne). Maksymalna moc silnika to $288$ \textit{KM}, a minimalna $48$ \textit{KM}.
+<<echo = FALSE>>==
+ggplot() + geom_point(aes(x = index, y = X), colour = "blue", fill = "blue") +
+    labs(title = "Posortowana konie mechanicznych", x = "Indeks", y = "Ilość", 
+         caption = 'Rysunek 1: Wykres pokazujący ilość koni mechanicznych auta w zależności od indeksu.') + 
+    theme(plot.title = element_text(hjust = 0.5),
+          plot.caption = element_text(hjust = 0.5))
+@
+     \item [\textbullet] \textbf{price} (zmienna objaśniana) - cena za auto wyrażona w \textit{RMB} (Renminbi, waluta Chin). Maksymalna cena to $45400$ \textit{RMB}, a minimalna $5118$ \textit{RMB}.
+<<echo = FALSE>>==
+ggplot() + geom_point(aes(x = index, y = Y), colour = "blue", fill = "blue") +
+    labs(title = "Ceny aut", x = "Indeks", y = "Wartość", 
+         caption = 'Rysunek 2: Wykres ukazujący cenę auta w zależności od indeksu.') + 
+    theme(plot.title = element_text(hjust = 0.5),
+          plot.caption = element_text(hjust = 0.5))
+@
+\end{itemize}
+
+\subsection{Cel analizy}
+Aby prawidłowo ocenić zależności pomiędzy ceną auta a ilością koni mechanicznych w silniku będziemy na początku sprawdzać statystyki opisowe dla każdego zbioru danych. Pózniej zajmiemy się dopasowaniem modelu regresji liniowej do danych oraz zbadaniem przedziałów ufności. Ponadto przeprowadzimy analizę residów i postaramy się wysnuć predykcje na podstawie otrzymanych wyników. W naszej analizie przyjmiemy $X$ jako kolumnę z ilością koni mechanicznych, a $Y$ jako tabela wartości cen aut. Wektor zmiennych $X$ będzie zmienną objaśniającą, a wektor wartości $Y$ zmienną objaśnianą. Korelacja pomiędzy danymi wyliczona analitycznie wynosi $\approx 0.8081$. Jest na tyle wysoka, że na spokojnie możemy spróbować dopasować model regresji liniowej.
+<<echo = FALSE>>=
+ggplot() + geom_point(aes(x = X, y = Y), colour = "blue", fill = "blue") +
+    labs(title = "Cena auta dla ilośći koni mechanicznych", x = "Konie mechaniczne", y = "Cena", 
+         caption = 'Rysunek 3: Wykres pokazujący cenęa auta w zależności od mocy silnika.') + 
+    theme(plot.title = element_text(hjust = 0.5),
+          plot.caption = element_text(hjust = 0.5))
+@
+
+\section{Statystyki opisowe dla danych}
+Poniżej przedstawiam definicje oraz wyniki statystyk opisowych, których używamy w analizie naszych danych.
+\begin{itemize}
+     \item [\textbullet] \textbf{Średnia arytmetyczna} $\bar x$ jest to iloraz sumy wszystkich $n$ obserwacji przez ich ilość. Dla danych $x_1, \ldots x_n$ wyraża się wzorem:
+		\begin{equation}
+			\bar x = \frac{x_1 + \ldots +  x_n}{n}.
+		\end{equation}
+    Dla naszych zmiennych średnia arytmetyczna ilości koni mechanicznych wynik to $\bar X = 104.1171$, a dla cen aut wynosi $\bar Y = 13276.711$.
+	
+	\item [\textbullet] \textbf{Mediana} jest wartością środkową w posortowanej próbie. W zależności, czy wielkość próby $n$ jest parzysta, czy nieparzysta mediana wyraża się wzorem: \\
+    \begin{equation}
+        x_{med}=\left\{\begin{array}{lr} x_{(\frac{n+1}{2})} , & \textup{gdy $n$ nieparzyste},\\ \frac{1}{2}( x_{(\frac{n}{2})} + x_{(\frac{n}{2}+1)} ), &\textup{gdy $n$ parzyste.} \end{array}\right. 
+    \end{equation}
+    Medianą ilości koni mechanicznych jest wynik $X_{med} = 95$, a mediana cen pojazdów to $Y_{med} = 10295$.
+
+    \item [\textbullet] \textbf{Wariancja} z próby $x_1, \ldots x_n$ jest średnią arytmetyczną kwadratów odchyleń od wartości średniej oczekiwanej. Wyraża się wzorem: \\
+		Dla estymatora nieobciążonego:
+		\begin{equation}
+			\sigma^2 = \frac{1}{n-1} \sum_{i=1}^{n} (x_i - \bar x)^2.
+		\end{equation}
+		Dla estymatora obciążonego:
+		\begin{equation}
+			\sigma^2 = \frac{1}{n} \sum_{i=1}^{n} (x_i - \bar x)^2.
+		\end{equation}
+   W naszym przypadku, dla danych rzeczywistych, obliczamy wariancję wzorem na estymator obciążony. Dla ilości koni mechanicznych jest równa $\sigma^{2}_{X} \approx 1563.741$, a dla cen pojazdów wariancja wynosi $\sigma^{2}_{Y} \approx 63821762$.
+
+	\item [\textbullet] \textbf{Odchylenie standardowe $\sigma$} z próby jest pierwiastkiem kwadratowym z wariancji. Odchylenie standardowe ilości koniów mechanicznych $\sigma_{X} \approx 39.54417$, a dla cen pojazdów to $\sigma_{Y} \approx 7988.852$.
+	
+	\item [\textbullet] \textbf{Kwartyle} dzielą zbiór danych na 4 grupy:
+		\begin{itemize}
+			\item drugi kwartyl (Q2) to mediana,
+			\item pierwszy kwartyl (Q1) to mediana grupy obserwacji mniejszych od Q2, $\textrm{Q1}_{X} = 70, \quad \textrm{Q1}_{Y} = 7788$,
+			\item trzeci kwartyl (Q3) to mediana grupy obserwacji większych od Q2, $\textrm{Q3}_{X} = 116, \quad \textrm{Q3}_{Y} = 16503$.
+		\end{itemize}
+    \item [\textbullet] \textbf{Rozstępem międzykwartalnym (IQR)} nazywamy liczbę równą różnicy kwartylu trzeciego i kwartylu pierwszego: $Q3 - Q1$. $\textrm{IQR}_{X} = 46, \quad \textrm{IQR}_{Y} = 8715$.
+
+ 
+\end{itemize}
+\section{Dobranie prostej regresji}
+\subsection{Metoda najmniejszych kwadratów}
+Aby prawidłowo dopasować prostą regresji liniowej będziemy szukać takich wartośći $\beta_{0}, \beta_{1}$, aby jak najlepiej spełniały warunek $\hat Y_{i} = \hat\beta_{1}\cdot X_{i} + \hat\beta_{0}$. Użyjemy do tego metody najmniejszych kwadratów. Starając się znaleźć najlepsze estymatory $\beta_{0}, \beta_{1}$ skorzystamy z sumy kwadratów błędów:
+\begin{equation}
+    S(\hat{\beta}_{1}, \hat{\beta}_{0}) = \sum_{i = 1}^{n}{(Y_{i} - \hat{\beta}_{1} \cdot X_{i} - \hat{\beta}_{0})}^{2}
+\end{equation}
+Następnie obliczymy pochodne funkcji $S(\hat{\beta}_{1}, \hat{\beta}_{0})$ po $\beta_{0}, \beta_{1}$:
+\begin{equation}
+    \frac{\delta S(\hat{\beta}_{1}, \hat{\beta}_{0})}{\delta \hat{\beta}_{1}} = \sum_{i = 1}^{n} -2 X_{i}(Y_{i} - \hat{\beta}_{1} \cdot X_{i} - \hat{\beta}_{0}) = 0, \qquad
+    \frac{\delta S(\hat{\beta}_{1}, \hat{\beta}_{0})}{\delta \hat{\beta}_{0}} = \sum_{i = 1}^{n} -2 (Y_{i} - \hat{\beta}_{1} \cdot X_{i} - \hat{\beta}_{0}) = 0.
+\end{equation}
+Z równania po prawej wyznaczamy wartość estymatora $\hat{\beta}_{0} = \bar{Y} - \hat{\beta}_{1} \cdot \bar{X}$. Podstawiając do równania po lewej stronie możemy już obliczyć wartość estymatora $\hat{\beta}_{1}$.
+\begin{equation}
+    \hat{\beta}_{1} = \frac{\sum_{i = 1}^{n}X_{i}(Y_{i}-\bar{Y})}{\sum_{i = 1}^{n}{(X_{i}-\bar{X})}^{2}} = 
+    \frac{\sum_{i = 1}^{n}Y_{i}(X_{i}-\bar{X})}{\sum_{i = 1}^{n}{(X_{i}-\bar{X})}^{2}} = 
+    \frac{\sum_{i = 1}^{n}(X_{i}-\bar{X})(Y_{i}-\bar{Y})}{\sum_{i = 1}^{n}{(X_{i}-\bar{X})}^{2}}
+\end{equation}
+<<echo = FALSE>>==
+sum1 <- 0
+sum2 <- 0
+sum3 <- 0
+sum4 <- 0
+
+for(i in 1:length(X)){
+  sum1 <- sum1 + (X[i] - mean(X)) * (Y[i] - mean(Y))
+  sum2 <- sum2 + (X[i] - mean(X))^2
+  sum3 <- sum3 + (Y[i] - mean(Y))^2
+}
+
+a = sum1/sum2
+b = mean(Y) - a * mean(X)
+
+for(i in 1:length(X)){
+  sum4 <- sum4 + (a*X[i] + b - mean(Y))^2
+}
+@
+Stosując powyższą metodę współczynnik $\hat{\beta}_{1}$ wynosi $163.2631$, a współczynnik $\hat{\beta}_{1}$ jest równy $-3721.761$. Podstawiająć otrzymane wartości do naszego modelu $\hat Y_{i} = \hat\beta_{1}\cdot X_{i} + \hat\beta_{0}$ otrzymujemy prostą regresji:
+<<echo = FALSE>>==
+ggplot() + geom_point(aes(x = X, y = Y), colour = "blue", fill = "blue") +
+    geom_line(aes(x = X, y = a * X + b), colour = "red", size = 1) + 
+    labs(title = "Cena auta dla ilośći koni mechanicznych", x = "Konie mechaniczne", y = "Cena", 
+         caption = 'Rysunek 4: Wykres pokazujący cenęa auta w zależności od mocy silnika z wyznaczoną prostą regresji.') + 
+    theme(plot.title = element_text(hjust = 0.5),
+          plot.caption = element_text(hjust = 0.5))
+@
+\subsection{Jakość dopasowania}
+Zdefiniumy trzy trzy sumy:
+\begin{itemize}
+     \item [\textbullet] \textbf{Całkowita suma kwadratów}: SST $= \sum_{i = 1}^{n}{(Y_{i} - \bar{Y})}^{2}$
+     \item [\textbullet] \textbf{Suma kwadratów błędów}: SSE $= \sum_{i = 1}^{n}{(Y_{i} - \hat{Y}_{i})}^{2}$
+     \item [\textbullet] \textbf{Suma kwadratów regresji}: SSR $= \sum_{i = 1}^{n}{(\hat{Y}_{i} - \bar{Y})}^{2}$
+\end{itemize}
+Prawdą jest, że $\textrm{SST} = \textrm{SSR} + \textrm{SSE}$. Współczynnikiem determinacji określającym stopień w jakim występuje zależność liniowa między zmienną objaśniającą, a zmienną objaśnianą nazywamy wielkość równą $R^2 = \frac{\textrm{SSR}}{\textrm{SST}}$. Im $R^2$ jest bliższe wartości $1$ to tym lepiej dopasowaliśmy model regresji. Ze wcześniejszych informacji można również wywnioskwać, że im większe SSR tym większe $R^2$. Nasze $R^2 \approx 0.6530884$, więc z tego wynika, że nasz model regresji nie jest idealny ale jest do zaakceptowania.
+\section{Przedziały ufności}
+Jako że badamy dane rzeczywiste nasza $\sigma$ jest nieznana. W takim przypadku przedział ufności wyznaczamy za pomocą kwantyla rozkładu t-studenta $t_{n-2,1-\frac{\alpha}{2}}$, gdzie $n$ to długość próby i $\alpha$ to poziom istotności. Obliczymy również wartość $S^2$, która jest nieobciążonym estymatorem $\sigma^{2}$ i jest wyrażony wzorem $S^2 = \frac{\sum_{i = 1}^{n} {(Y_{i} - \hat{Y}_{i})}^{2}}{n-2}$. Procedurę wpadania danej wartości do wyznaczonego przedziału wykonamy $M = 1000$ razy dla trzech różnych poziomów istotności $\alpha_{1} = 0.01, \alpha_{2} = 0.05, \alpha_{3} = 0.1$.
+\subsection{Przedział ufności $\beta_{0}$}
+\begin{equation}
+    \frac{\hat{\beta}_{0} - \beta_{0}}{S \sqrt{\frac{1}{n} + \frac{\hat{X}^2}{\sum_{i = 1}^{n}{(X_{i} - \hat{X})}^{2}}}} \sim N(0,1)
+\end{equation}
+\begin{equation}
+    P(-t_{n-1,1-\frac{\alpha}{2}} S \scriptstyle\sqrt{\frac{1}{n} + \frac{{\bar{X}}^{2}}{\sum_{i = 1}^{n}{(X_{i} - \bar{X})}^{2}}}\textstyle + \hat{\beta}_{0} < \beta_{0} <  t_{n-1,1-\frac{\alpha}{2}} S \scriptstyle{\sqrt{\frac{1}{n} + \frac{{\bar{X}}^{2}}{\sum_{i = 1}^{n}{(X_{i} - \bar{X})}^{2}}}}\textstyle + \hat{\beta}_{0}) = 1 - \alpha
+\end{equation}
+\subsection{Przedział ufności $\beta_{1}$}
+\begin{equation}
+    \frac{\hat{\beta}_{1} - \beta_{1}}{S \sqrt{\frac{1}{\sum_{i = 1}^{n}{(X_{i} - \hat{X})}^{2}}}} \sim N(0,1)
+\end{equation}
+\begin{equation}
+    P(-t_{n-1,1-\frac{\alpha}{2}}\scriptstyle\frac{S}{\sqrt{\sum_{i = 1}^{n}{(X_{i} - \bar{X})}^{2}}}\textstyle + \hat{\beta}_{1} < \beta_{1} <  t_{n-1,1-\frac{\alpha}{2}}\scriptstyle\frac{S}{\sqrt{\sum_{i = 1}^{n}{(X_{i} - \bar{X})}^{2}}}\textstyle + \hat{\beta}_{1}) = 1 - \alpha
+\end{equation}
+\subsection{Końcowa analiza wyników}
+Załóżmy, że średnią dolną granicę przedziału dla $\beta_{0}$ zdefiniujemy jako $A_{\beta_{0}}^{-}$ oraz górną jako $A_{\beta_{0}}^{+}$ i odpowiednio dla $\beta_{1}, A_{\beta_{1}}^{-}, A_{\beta_{1}}^{+}$. Po $M = 1000$ symulacjach dla każdego $\alpha$ wyniki są następujące:
+%\newpage
+\begin{table}[h]
+    \centering
+    \begin{tabular}{|c|c|c|c|}
+    \hline
+    $\cdot$ & $\alpha_{1} = 0.01$ &$\alpha_{2} = 0.05$ &$\alpha_{3} = 0.1$ \\ \hline
+    $A_{\beta_{0}}^{-}$ & -5429.822 & -4988.035 & -4808.366\\ \hline
+    $A_{\beta_{0}}^{+}$ & -1997.945 & -2390.224 & -2627.025\\ \hline
+    $A_{\beta_{1}}^{-}$ & 148.6998 & 152.2243 & 154.917\\ \hline
+    $A_{\beta_{1}}^{+}$ & 177.708 & 174.1438 & 172.2801\\ \hline
+    $P(A_{\beta_{0}}^{-} < \beta_{0}< A_{\beta_{0}}^{+})$ & 0.992 & 0.95 & 0.892\\ \hline
+    $P(A_{\beta_{1}}^{-} < \beta_{1}< A_{\beta_{1}}^{+})$ & 0.99 & 0.943 & 0.89\\ \hline
+    \end{tabular}
+    \caption{\label{demo-table}Tabela przedziałów oraz prawdopodobieństwa w zależności od poziomu istotności $\alpha$.}
+\end{table}
+
+Widzimy, że im mniejszy przedział istotności, tym większe są przedziały oraz naturalnie prawdopodobieństwo, że nasze $\beta_{0}$ trafi do naszego przedziału.
+\section{Analiza residuów}
+<<echo = FALSE>>=
+e <- c()
+
+for(i in 1:length(Y)){
+    e[i] <- Y[i] - (a * X[i] + b)
+}
+@
+Różnice pomiędzy wartością $Y_{i}$ a teoretyczną wartością $\hat Y_{i}$ nazywami błędem $e_{i}$. Wyrażamy je wzorem:$$e_i = y_i - \hat{y_i}. $$
+Suma wartości resztkowych (residuów) $\sum_{i = 1}^{n} e_{i}$ powinna się sumować do 0. Suma błędów w naszym modelu wynosi $-1.95\cdot 10^{-13}$; jest bardzo bliska wartości 0. Analitycznie wyliczona wariancja $\textrm{Var}(e_{i}) \approx 22163811$. Tak duża wariancja związana jest z nieidealnymi rzeczywistymi danymi. $Y_{i}$ można wyrazić jako $Y_{i} = \beta_{1}\cdot X_{i} + \beta_{0} + e_{i}$. W teoretycznym modelu regresji liniowej residua powinny być z rozkładu normalnego $N(0,\sigma^2)$ oraz być niezależne. Sprawdzenie tych warunków pozwoli ocenić nam jak rzeczywiście zachowują się wartości resztkowe i poprawność dobranego modelu regresyjnego:
+
+<<echo = FALSE>>=
+ggplot() + geom_point(aes(x = index, y = e), colour = "blue", fill = "blue") +
+    labs(title = "Błędy", x = "Indeks", y = "Wartość", 
+         caption = 'Rysunek 5: Wykres ukazujący wartości błędów w zależności od jego indeksu.') + 
+    geom_hline(yintercept = mean(e), color = "red", size = 1) +
+    theme(plot.title = element_text(hjust = 0.5),
+          plot.caption = element_text(hjust = 0.5))
+@
+
+Jak widać na wykresie błędy wydają się oscylować wokół 0, ale pod koniec ich wartość się zwiększa. Może być to spowodowane nieidealnymi danymi rzeczywistymi oraz wielkościami danych rzędu $10^{5}$.
+\subsection{Wykres pudełkowy}
+Łatwiej informacje będzie można zdobyć z wykresu pudełkowego:
+<<echo = FALSE>>=
+ggplot() + geom_boxplot(aes(y = e)) +
+    labs(title = "Błędy", y = "Wartość", 
+         caption = 'Rysunek 6: Wykres pudełkowy pokazujący wartości błędów.') + 
+    theme(plot.title = element_text(hjust = 0.5),
+          plot.caption = element_text(hjust = 0.5))
+@
+Z wykresu boxplot można odczytać, że niektóre wartości są odstające. Policzymy wartości, które mogą nam je wyrzucić. $\textrm{IQR}_{e} = 3996.662, \quad \textrm{Q2}_{e} = -571.7144, \quad \textrm{Q3}_{e} + 1.5 \cdot \textrm{IQR} = 7701.817, \quad \textrm{Q1}_{e} - 1.5 \cdot \textrm{IQR} = -8284.83$. Dwie ostatnie wartości to kolejno górny i dolny wąs. Wartości, które nie mieszczą się w zadanym przedziale wyrzucimy.
+<<echo = FALSE>>==
+out <- boxplot.stats(e)$out
+ind <- c()
+for(i in 1:length(e)){
+    for(j in 1:length(out)){
+        if(e[i] == out[j]){
+            ind <- append(ind, i)
+            break
+        }
+    }
+}
+X1 <- X[-ind]
+Y1 <- Y[-ind]
+e1 <- e[-ind]
+sum1 <- 0
+sum2 <- 0
+sum3 <- 0
+sum4 <- 0
+
+for(i in 1:length(X1)){
+  sum1 <- sum1 + (X1[i] - mean(X1)) * (Y1[i] - mean(Y1))
+  sum2 <- sum2 + (X1[i] - mean(X1))^2
+  sum3 <- sum3 + (Y1[i] - mean(Y1))^2
+}
+
+a11 <- sum1/sum2
+b11 <- mean(Y1) - a11 * mean(X1)
+
+for(i in 1:length(X1)){
+  sum4 <- sum4 + (a11*X1[i] + b11 - mean(Y1))^2
+}
+@
+\subsection{Usunięcie wartości odstających}
+Wyrzuciliśmy 17 wartości, jak na 206 danych nie jest to mały wynik, ale też nie jest za duży. Teraz wykresy po wyrzuceniu wyglądają następująco: 
+<<echo = FALSE>>==
+ggplot() + geom_point(aes(x = X1, y = Y1), colour = "blue", fill = "blue") +
+    geom_line(aes(x = X1, y = a11 * X1 + b11), colour = "red", size = 1) + 
+    labs(title = "Cena auta dla ilośći koni mechanicznych", x = "Konie mechaniczne", y = "Cena", 
+         caption = 'Rysunek 7: Wykres pokazujący cenęa auta w zależności od mocy silnika z wyznaczoną nową prostą regresji.') + 
+    theme(plot.title = element_text(hjust = 0.5),
+          plot.caption = element_text(hjust = 0.5))
+@
+<<echo = FALSE>>=
+ggplot() + geom_point(aes(x = index[-ind], y = e1), colour = "blue", fill = "blue") +
+    labs(title = "Błędy", x = "Indeks", y = "Wartość", 
+         caption = 'Rysunek 8: Wykres ukazujący wartości błędów w zależności od jego indeksu.') + 
+    geom_hline(yintercept = mean(e), color = "red", size = 1) +
+    theme(plot.title = element_text(hjust = 0.5),
+          plot.caption = element_text(hjust = 0.5))
+@
+
+Po odrzuceniu wartości odstających otrzymaliśmy już inne wyniki $\beta_{0} = -2493.058, \quad \beta_{1} = 143.2368 \quad R^2 \approx 0.7248339$. Zwiększenie się wartości $R^2$ świadczy o lepszym dopasowaniu modelu regresji liniowej do naszych danych.
+<<echo = FALSE>>==
+A <- rnorm(n, mean(e), sqrt(var(e)))
+x <- seq(-15000, 15000, length.out = 1000)
+B <- dnorm(x, mean(e), sqrt(var(e)))
+@
+Po odrzuceniu wartości odstających postaramy się zobaczyć, czy nasze residua mają rozkład normalny z parametrami $\mu = 0, \sigma^2_{e} = \textrm{Var}(e_{i})$. Wykorzystamy do tego gęstość prawdopodobieństwa rozkładu normalnego:
+<<echo = FALSE>>==
+ggplot() +
+    geom_density(aes(x = A), colour = 'cyan', fill = 'cyan') +
+    geom_line(aes(x = x, y = B), colour = "red") +
+    labs(title = 'Rozkład wartości błędów', x = 'X', y = 'Częstość',
+         caption = 'Rysunek 9: Wykres pokazujący rozkład wartości błędów porównany do rozkładu normalnego 
+                    z parametrami odpowiadającymi błędom.') + 
+    theme(plot.title = element_text(hjust = 0.5),
+          plot.caption = element_text(hjust = 0.5))
+@
+
+Widzimy, że gęstości się pokrywają, więc można założyć, że nasze residua mają rozkład normalny z zadanymi parametrami.
+
+\subsection{Empiryczna funkcja autokowariancji}
+<<echo = FALSE>>==
+h <- seq(-50, 50, 1)
+e_sr <- mean(e)
+autokor <- c()
+teorkor <- c()
+  
+for(j in 1:length(h)){
+    
+    sum1 <- 0
+    pom <- n - abs(h[j])
+    
+    if(h[j] == 0){
+        
+        teorkor[j] <- var(e)
+    
+    }
+    else{
+        
+        teorkor[j] <- 0
+        
+    }
+
+    for(i in 1:pom){
+
+        il <- (e[i + abs(h[j])] - e_sr) * (e[i] - e_sr)
+        sum1 <- sum1 + il
+
+    }
+
+    autokor[j] <- 1/n*sum1
+
+}
+@
+Żeby sprawdzić, czy dane nie są skorelowane można na nie nałożyc funkcję autokowariancji zadaną wzorem: $$\hat{\gamma}(h) = \frac{1}{n}\sum_{i = 1}^{n - |h|}(e_{i + |h|} - \hat{e}) \cdot (e_{i} - \hat{e}).$$ Wykres porównujący wartości teoretyczne funkcji autokowariancji z wartościami empirycznymi wygląda następująco:
+<<echo = FALSE>>==
+ggplot() +
+    geom_point(aes(x = h, y = teorkor), color = 'red', fill = NA) +
+    geom_point(aes(x = h, y = autokor), color = 'cyan') +
+    labs(title = 'Autokowariancja błędów', x = 'h', y = 'Wartość',
+         caption = 'Rysunek 10: Wykres porównujący wartość empiryczną funkcji autokowariancji błędów z funkcją teoretyczną.') + 
+    theme(plot.title = element_text(hjust = 0.5),
+          plot.caption = element_text(hjust = 0.5))
+@
+
+Wnioskując z wyglądu wykresu, wartości empirycznej autokowariancji kręcą się wokół wartości teoretycznych, ale poza pojedynczymi przypadkami całkiem odbiegają od wartości teoretyczych. Pomimo, że dla $h = 0$ wartość empiryczna jest bardzo blisko, tak dla $|h| = 1$, błąd już jest bardzo duży. Na podstawie wykresu ciężko z pełną pewnością powiedzieć, że błędy nie są skorelowane.
+\section{Predykcje}
+<<echo = FALSE>>==
+xx <- seq(min(X), max(X), length.out = n)
+M <- n - 10
+alpha <- 0.05
+E <- rnorm(n, 0, sqrt(var(e)))
+
+YY <- c()
+sum1 <- 0
+sum2 <- 0
+
+for(i in 1:n){
+  
+  YY[i] <- b + a * xx[i] + E[i]
+  
+}
+
+yy_sr <- mean(YY)
+xx_sr <- mean(xx)
+  
+for(i in 1:n){
+    
+    sum1 <- sum1 + (xx[i] * (YY[i] - yy_sr))
+    sum2 <- sum2 + (xx[i] - xx_sr)^2
+    
+}
+  
+beta1 <- sum1/sum2
+beta0 <- yy_sr - beta1 * xx_sr
+  
+Yd <- c()
+s <- 0
+  
+for(i in 1:n){
+    
+    Yd[i] <- beta0 + beta1 * xx[i]
+    s <- s + (YY[i] - Yd[i])^2
+    
+}
+  
+S <- sqrt(s/(n-2))
+YD <- c()
+Szg <- c()
+Sng <- c()
+Szd <- c()
+Snd <- c()
+
+pom <- n - M
+
+for(i in 1:pom){
+  
+  YD[i] <- beta0 + beta1 * xx[M+1]
+  Szg[i] <- YD[i] + qnorm(1-alpha/2)*sqrt(var(e))*sqrt(1+1/n+(xx[i]-xx_sr)^2/sum2)
+  Sng[i] <- YD[i] + qt(1-alpha/2,n-2)*S*sqrt(1+1/n+(xx[i]-xx_sr)^2/sum2)
+  Szd[i] <- YD[i] - qnorm(1-alpha/2)*sqrt(var(e))*sqrt(1+1/n+(xx[i]-xx_sr)^2/sum2)
+  Snd[i] <- YD[i] - qt(1-alpha/2,n-2)*S*sqrt(1+1/n+(xx[i]-xx_sr)^2/sum2)
+}
+@
+Predykcje to jest przedział, stworzony za pomocą przedziałów ufności, w którym się spodziewamy następnych obserwacji. Oczywiście ma znaczenie, czy $\sigma$ jest znana, czy nie jest. Tak jak w poprzednim przypadku. musimy rozpatrywać przykład z $\sigma$-nieznana. Ważny jest też poziom istotności, w naszym przypadku $\alpha$ będzie równa 0.05.
+
+<<echo = FALSE>>==
+ggplot() + 
+    geom_point(aes(x = xx[(M+1):n], y = YY[(M+1):n]), colour = "darkblue") + 
+    #geom_line(aes(x = xx[(M+1):n], y = Szg), colour = "firebrick") + 
+    #geom_line(aes(x = xx[(M+1):n], y = Szd), colour = "firebrick") +
+    geom_line(aes(x = xx[(M+1):n], y = Sng), colour = "violet") + 
+    geom_line(aes(x = xx[(M+1):n], y = Snd), colour = "violet") +
+    labs(title = "Predykcje ostatnich 10 największych obserwacji",
+         x = "Konie mechaniczne",
+         y = "Cena",
+         caption = "Rysunek 11: Wykres pokazujący predykcje cen aut w zależności od koni mechanicznych 
+                    oraz maksymalne granice dla poziomu istotności alpha = 0.05.") +
+    theme(plot.title = element_text(hjust = 0.5),
+          plot.caption = element_text(hjust = 0.5))
+@
+
+Z wykresu można zobaczyć, że nasze wysymulowane sztuczne obserwacje mieszczą się w zadanym przedziale. Zatem możemy stwierdzić, że nasze predykcje były poprawne.
+\section{Podsumowanie}
+Taka obligatoryjna analiza danych ma bardzo wiele plusów. Nie dość, że można wykryć trendy w danych to również po większych przemyśleniach, obliczeniach można jeszczę te trendy sprecyzować. Dobrym przykładem jest usunięcie wartości odstających. Po dłuższej analizie po której doszliśmy do usuwania ekstremalnych wartości, nasz nowy model regresji liniowej był lepszy niż bez usunięcia tych danych, o czym mówił współczynnik determinacji $R^2$. Na podstawie całej analizy przedstawionej w sprawozdaniu można wywnioskować, że ilość koni mechaniznych w pojeździe ma znaczny wpływ na cenę auta. Rzadko w danych rzeczywistych spotyka się tak wysoki współczynnik determinacji.
+\end{document}
